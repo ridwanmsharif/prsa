@@ -1,8 +1,6 @@
 import random
 from primesieve import *
 
-public_keys = {}
-private_key = {}
 
 # Purpose:
 # set_primes(num1, num2) consumes 2 natural numbers and produces 2
@@ -105,77 +103,82 @@ def find_d(e, p, q):
 	else:
 		return "Pick for e not valid"
 # Purpose:
-# generate_public(name, p, q) generates a slot in the public_keys dictionary previously 
-# defined and adds an entry with the Name of the sender as ther Key and the values of e
-# and product of the two primes input as parameters as the value stored in that order
-# Contract: Str Num Num -> Dict
-def generate_public(name, p, q):
+# generate_public(p, q) generates a 2 element list representing the public key
+# that is [e, n] having given the 2 primes as parameters
+# Contract: Num Num -> (listof Num Num)
+def generate_public(p, q):
 	p1q1 = (p - 1) * (q - 1)
 	potential = random.randint(1, p)
 	y = find_e(potential, p1q1)
-	public_keys[name] = [y, (p * q)]
-	return public_keys
+	public_key = [y, (p * q)]
+	return public_key
 
 # Purpose:
-# generate_private(name, e, p, q) generates a slot in the private_key dictionary previously 
-# defined and adds an entry with the Name of the sender as ther Key and the values of d
-# (as calculated) & product of the 2 primes as parameters as the value stored in that order
-# Contract: Str Num Num -> Dict
-def generate_private(name, e, p, q):
+# generate_private(name, e, p, q) generates a 2 element list representing the private key
+# that is [d, n] having given the first element of the public key and 2 primes as parameters
+# Contract: Num Num -> (listof Num Num)
+def generate_private(e, p, q):
 	x = find_d(e, p, q)
-	private_key[name] = [x, (p*q)]
+	private_key = [x, (p*q)]
 	return private_key
 
+
 # Purpose:
-# encrypt_message(message, name) consumes the message to be sent and the name of the recipient
-# and then proceeds to look up the recipients public key and uses it as an exponent on the 
-# encoded numerical equivalent of the message and reduces it by the modulo of the product
-# of the two primes (i.e the second part of the public key)
+# encrypt_message(message, pkey, n) consumes the message to be sent and the elements of the 
+# the public key then proceeds to use it as an exponent on the encoded numerical equivalent
+# of the message and reduces it by the modulo of the product of the two primes 
+# (i.e the second part of the public key)
 # Contract: Str Str -> Int
 # Requires: Because of the temporary restriction on encode, message must be only lowercase letters
-def encrypt_message(message, name):
+def encrypt_message(message, pkey, n):
 	encoded = encode_message(message)
-	ciphertext = pow(encoded, public_keys[name][0], public_keys[name][1])
+	ciphertext = pow(encoded, pkey, n)
 	return ciphertext
 
 # Purpose:
-# decrypt_message(ciphertext, name) consumes the ciphertext recieved and the name of the recipient
-# and then proceeds to look up the recipients private key and uses it as an exponent on the 
-# encoded numerical equivalent of the ciphertext and reduces it by the modulo of the product
+# decrypt_message(ciphertext, skey, n) consumes the ciphertext recieved and the elements of the
+# pricvate key and then proceeds to use it as an exponent on the encoded numerical equivalent
+# of the ciphertext and reduces it by the modulo of the product
 # of the two primes (i.e the second part of the private key) then finally decodes it
 # NOTE: Private Key is only available to the owner of the key. Thus Private.
 # Contract: Str Str -> Str
-def decrypt_message(ciphertext, name):
-	decrypted_text = pow(ciphertext, private_key[name][0], private_key[name][1])
-	if decrypted_text > private_key[name][1]:
+def decrypt_message(ciphertext, skey, n):
+	decrypted_text = pow(ciphertext, skey, n)
+	if decrypted_text > n:
 		final = "Message too long"
 	else :
 		final = decode_message(decrypted_text)
 	return final
 
 # Purpose:
-# generate_rsa_message(name, message, num1, num2) is a wrapper function that generates
-# an encoded ciphertext given the name of the recipient the message and 2 numbers used to find
-# primes as defined by set_primes. It does so by implementing algorithms defined by the RSA Scheme
-# Contract: Str Str Nat Nat -> Nat
-def generate_rsa_message(name, message, num1, num2):
+# generate_key_pair(num1, num2): generates a dictionary with 2 elements: The public and 
+# private key
+# Contract: Nat Nat -> Dict
+def generate_key_pair(num1, num2):
 	primes = set_primes(num1, num2)
 	p = primes[0]
 	q = primes[1]
 
-	generate_public(name, p, q)
-	generate_private(name, public_keys[name][0], p, q)
-	c = encrypt_message(message, name)
+	public = generate_public(p, q)
+	private = generate_private(public[0], p, q)
+	key_pair = {"Public": public,
+				"Private": private}
+	return key_pair
+
+# Purpose:
+# rsa_encrypt(message, pkey, n) is a wrapper function that generates
+# an encoded ciphertext given the elements of any given public key
+# It does so by implementing algorithms defined by the RSA Scheme
+# Contract: Str Nat Nat -> Nat
+def rsa_encrypt(message, pkey, n):
+	c = encrypt_message(message, pkey, n)
 	return c
 
 # Purpose:
-# retrieve_rsa_message(name, ciphertext) is a wrapper function that generates
-# a decoded message given the name of the recipient the message and the encoded ciphertext
+# rsa_decrypt(ciphertext, skey, n) is a wrapper function that generates
+# a decoded message given the elements of the required private key
 # It does so by implementing algorithms defined by the RSA Scheme
-# Contract: Str Str -> Str
-def retrieve_rsa_message(name, ciphertext):
-	r = decrypt_message(ciphertext, name) 
+# Contract: Nat Str -> Str
+def rsa_decrypt(ciphertext, skey, n):
+	r = decrypt_message(ciphertext, skey, n ) 
 	return r
-
-# x = generate_rsa_message('Ridwan', 'ridwan', 123456788, 123456789)
-# r = retrieve_rsa_message('Ridwan', x)
