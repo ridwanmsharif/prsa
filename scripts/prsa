@@ -1,0 +1,10 @@
+#!/bin/sh
+if [ -f "$(which python3)" ]
+then
+   PYTHON=$(which python3)
+fi
+if [ -f "$(which python)" ]
+then
+   PYTHON=$(which python)
+fi
+exec $PYTHON -c 'import prsa' "$@"
