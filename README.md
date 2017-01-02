@@ -108,6 +108,10 @@ optional arguments:
    msg
 ```
 
+## Disclaimer
+
+Purely experimental project. Designed for learning purposes not production use.
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at [@ridwanmsharif](https://www.github.com/ridwanmsharif)
